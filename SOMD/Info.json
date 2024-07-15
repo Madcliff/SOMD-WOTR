@@ -1,12 +1,13 @@
 ﻿{
-  "Id": "SOMD",
-  "DisplayName": "Secrets of Magical Discipline",
-  "Author": "",
-  "Version": "1.0.0",
-  "ManagerVersion": "0.27.11",
-  "Requirements": [],
-  "AssemblyName": "SOMD.dll",
-  "EntryMethod": "SOMD.Main.Load",
-  "HomePage": "",
-  "Repository": ""
+    "Id": "SOMD",
+    "DisplayName": "Secrets of Magical Discipline",
+    "Author": "",
+    "Version": "1.0.0",
+    "ManagerVersion": "0.27.11",
+    "Requirements": [ "TabletopTweaks-Core-0.7.6" ],
+    "LoadAfter": [ "TabletopTweaks-Core" ],
+    "AssemblyName": "SOMD.dll",
+    "EntryMethod": "SOMD.Main.Load",
+    "HomePage": "",
+    "Repository": ""
 }

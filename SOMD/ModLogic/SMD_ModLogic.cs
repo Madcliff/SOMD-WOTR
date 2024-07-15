@@ -10,7 +10,7 @@ namespace SOMD.ModLogic
 
         public ModContextSOMD(ModEntry ModEntry) : base(ModEntry)
         {
-            //LoadAllSettings();
+            LoadAllSettings();
         }
         public override void LoadAllSettings()
         {

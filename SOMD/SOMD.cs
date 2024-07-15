@@ -56,7 +56,7 @@ namespace SOMD
         private static readonly BlueprintFeatureSelection MysticTheurgeDivineSpellbookSelection = BlueprintTools.GetBlueprint<BlueprintFeatureSelection>("7cd057944ce7896479717778330a4933");
         private static readonly BlueprintProgression MysticTheurgeClericProgression = BlueprintTools.GetBlueprint<BlueprintProgression>("8bac42667e6f67047acbcbd668cf2029");
 
-
+        //new
         //add features
         public static LevelEntry AddFeatures(this LevelEntry levelEntry, params BlueprintFeatureBase[] features)
         {
