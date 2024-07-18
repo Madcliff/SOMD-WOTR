@@ -36,6 +36,7 @@ using static Kingmaker.Blueprints.Classes.Prerequisites.Prerequisite;
 using BlueprintCore.Utils;
 using static SOMD.Main;
 using SOMD.NewComponents;
+using TabletopTweaks.Base;
 
 
 namespace SOMD
@@ -86,12 +87,154 @@ namespace SOMD
         public static void addSecretsofMagicalDiscipline()
         {
 
+            var clericspells = SpellTools.SpellList.ClericSpellList;
+
+            var ArchivistSpellList = SpellListConfigurator.New("ArchivistSpellList", "0795f6da-24aa-49c5-b847-e86a8615aec8")
+                .AddToSpellsByLevel(ClericSpells.SpellsByLevel)
+            .Configure();
+
+            var list = new List<BlueprintSpellList>() {
+                SpellListRefs.DruidSpellList.Reference.Get(),
+                SpellListRefs.InquisitorSpellList.Reference.Get(),
+                SpellListRefs.PaladinSpellList.Reference.Get(),
+                SpellListRefs.RangerSpellList.Reference.Get(),
+                SpellListRefs.ShamanSpelllist.Reference.Get(),
+                SpellListRefs.WarpriestSpelllist.Reference.Get()
+            };
+            var domainlist = FeatureSelectionRefs.DomainsSelection.Reference.Get().m_AllFeatures;
+            foreach (var feature in domainlist)
+            {
+                var spelllist = feature.Get().GetComponent<LearnSpellList>().m_SpellList;
+                list.Add(spelllist);
+            }
+            foreach (var level in ArchivistSpellList.SpellsByLevel)
+            {
+                foreach (var clazz in list)
+                {
+                    foreach (var spell in clazz.SpellsByLevel[level.SpellLevel].Spells)
+                    {
+                        level.m_Spells.Add(spell.ToReference<BlueprintAbilityReference>());
+                    }
+                }
+            }
+
+
+
+            var ArchivistSpellbook = ClassTools.Classes.ClericClass.Spellbook.CreateCopy(SOMDContext, "ArchivistSpellbook", bp =>
+            {
+                bp.CastingAttribute = StatType.Intelligence;
+                bp.m_SpellList = ArchivistSpellList.ToReference<BlueprintSpellListReference>();
+                bp.m_SpellsKnown = ClassTools.Classes.WizardClass.Spellbook.m_SpellsKnown;
+                bp.AllSpellsKnown = ClassTools.Classes.WizardClass.Spellbook.AllSpellsKnown;
+                bp.SpellsPerLevel = ClassTools.Classes.WizardClass.Spellbook.SpellsPerLevel;
+                bp.m_SpellsPerDay = ClassTools.Classes.WizardClass.Spellbook.m_SpellsPerDay;
+                bp.CanCopyScrolls = ClassTools.Classes.WizardClass.Spellbook.CanCopyScrolls;
+                SpellTools.Spellbook.AllSpellbooks.Add(bp);
+
+            });
+
+
+
+
+
+
+            var ArchivistArchetype = Helpers.CreateBlueprint<BlueprintArchetype>(SOMDContext, "ArchivistArchetype", bp =>
+            {
+                bp.SetName(SOMDContext, "Archivist");
+                bp.SetDescription(SOMDContext, "While most clerics who fall out of favor with their deities " +
+                    "simply lose their divine connection and the powers it granted, a few continue to go through the motions of prayer and obedience, persisting " +
+                    "in the habits of faith even when their faith itself has faded. Among these, an even smaller number find that while their original deity no " +
+                    "longer answers their prayers, something else does: an unknown entity or force of the universe channeling its power through a trained and " +
+                    "practicing vessel.");
+                bp.m_ReplaceSpellbook = ArchivistSpellbook.ToReference<BlueprintSpellbookReference>();
+                bp.RemoveFeatures = new LevelEntry[] {
+                    Helpers.CreateLevelEntry(1,
+                        ChannelEnergySelection,
+                        DomainsSelection,
+                        SecondDomainsSelection
+                    ),
+                };
+                bp.AddFeatures = new LevelEntry[] {
+                    Helpers.CreateLevelEntry(1,
+                        ClericProficiencies
+                    ),
+                };
+            });
+            ClassTools.Classes.ClericClass.m_Archetypes = ClassTools.Classes.ClericClass.m_Archetypes.AppendToArray(ArchivistArchetype.ToReference<BlueprintArchetypeReference>());
+
+
+            ClassTools.Classes.WizardClass.TemporaryContext(bp =>
+            {
+            });
+
+            var MysticTheurgeArchivistLevelUp = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "MysticTheurgeArchivistLevelUp", bp =>
+            {
+                bp.SetName(SOMDContext, "Archivist");
+                bp.SetDescription(SOMDContext, "At 1st level, the mystic theurge selects a divine {g|Encyclopedia:Spell}spellcasting{/g} class she belonged to before adding the prestige class. " +
+                    "When a new mystic theurge level is gained, the character gains new spells per day and new spells known as if she had also gained a level in that spellcasting class.");
+                bp.Ranks = 10;
+                bp.HideInUI = true;
+                bp.Groups = new FeatureGroup[] { FeatureGroup.MysticTheurgeDivineSpellbook };
+                bp.IsClassFeature = true;
+                bp.AddComponent<AddSpellbookLevel>(c =>
+                {
+                    c.m_Spellbook = ArchivistSpellbook.ToReference<BlueprintSpellbookReference>();
+                });
+            });
+            var MysticTheurgeArchivistProgression = Helpers.CreateBlueprint<BlueprintProgression>(SOMDContext, "MysticTheurgeArchivistProgression", bp =>
+            {
+                bp.SetName(SOMDContext, "Archivist");
+                bp.SetDescription(SOMDContext, "At 1st level, the mystic theurge selects a divine {g|Encyclopedia:Spell}spellcasting{/g} class she belonged to before adding the prestige class. " +
+                    "When a new mystic theurge level is gained, the character gains new spells per day and new spells known as if she had also gained a level in that spellcasting class.");
+                bp.Ranks = 1;
+                bp.HideInUI = true;
+                bp.HideInCharacterSheetAndLevelUp = true;
+                bp.HideNotAvailibleInUI = true;
+                bp.Groups = new FeatureGroup[] { FeatureGroup.MysticTheurgeDivineSpellbook };
+                bp.IsClassFeature = true;
+                bp.m_Classes = new BlueprintProgression.ClassWithLevel[] {
+                    new BlueprintProgression.ClassWithLevel{
+                        m_Class = MysticTheurgeClass.ToReference<BlueprintCharacterClassReference>()
+                    }
+                };
+                bp.LevelEntries = new LevelEntry[] {
+                    Helpers.CreateLevelEntry(1, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(2, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(3, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(4, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(5, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(6, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(7, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(8, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(9, MysticTheurgeArchivistLevelUp),
+                    Helpers.CreateLevelEntry(10, MysticTheurgeArchivistLevelUp)
+                };
+                bp.AddPrerequisite<PrerequisiteClassSpellLevel>(c =>
+                {
+                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
+                    c.RequiredSpellLevel = 2;
+                });
+                bp.AddComponent<MysticTheurgeSpellbook>(c =>
+                {
+                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
+                    c.m_MysticTheurge = MysticTheurgeClass.ToReference<BlueprintCharacterClassReference>();
+                });
+                bp.AddPrerequisite<PrerequisiteArchetypeLevel>(c =>
+                {
+                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
+                    c.m_Archetype = ArchivistArchetype.ToReference<BlueprintArchetypeReference>();
+                    c.Level = 1;
+                });
+            });
+
 
             var LoremasterProgression = BlueprintTools.GetBlueprint<BlueprintProgression>("2bcd2330cc2c5a747968a8c782d4fa0a");
 
 
 
-            var LoremasterSecretsofMagicalDisciplineResource = Helpers.CreateBlueprint<BlueprintAbilityResource>(SOMDContext, "LoremasterSecretsofMagicalDisciplineResource", bp => {
+
+            var LoremasterSecretsofMagicalDisciplineResource = Helpers.CreateBlueprint<BlueprintAbilityResource>(SOMDContext, "LoremasterSecretsofMagicalDisciplineResource", bp =>
+            {
                 bp.m_MaxAmount = new BlueprintAbilityResource.Amount()
                 {
                     m_Class = new BlueprintCharacterClassReference[0],
@@ -107,12 +250,14 @@ namespace SOMD
 
 
 
-            var LoremasterSecretsofMagicalDiscipline = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "LoremasterSecretsofMagicalDiscipline", bp => {
+            var LoremasterSecretsofMagicalDiscipline = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "LoremasterSecretsofMagicalDiscipline", bp =>
+            {
                 bp.SetName(SOMDContext, "Loremaster Secrets of Magical Discipline");
                 bp.SetDescription(SOMDContext, "A powerful ability to cast any spell as one wills");
                 bp.IsClassFeature = true;
                 bp.Ranks = 1;
-                bp.AddComponent<SecretsofMagicalDisciplineComponent>(c => {
+                bp.AddComponent<SecretsofMagicalDisciplineComponent>(c =>
+                {
                     c.m_Resource = LoremasterSecretsofMagicalDisciplineResource.ToReference<BlueprintAbilityResourceReference>();
                     c.m_SpellLists = new BlueprintSpellListReference[] {
                         SpellTools.SpellList.WizardSpellList.ToReference<BlueprintSpellListReference>(),
@@ -123,7 +268,8 @@ namespace SOMD
                     };
                     c.m_Spellbook = SpellTools.Spellbook.WizardSpellbook.ToReference<BlueprintSpellbookReference>();
                 });
-                bp.AddComponent<SecretsofMagicalDisciplineClericComponent>(c => {
+                bp.AddComponent<SecretsofMagicalDisciplineClericComponent>(c =>
+                {
                     c.m_Resource = LoremasterSecretsofMagicalDisciplineResource.ToReference<BlueprintAbilityResourceReference>();
                     c.m_SpellLists = new BlueprintSpellListReference[] {
                         SpellTools.SpellList.WizardSpellList.ToReference<BlueprintSpellListReference>(),
@@ -132,21 +278,36 @@ namespace SOMD
                         SpellTools.SpellList.WitchSpellList.ToReference<BlueprintSpellListReference>(),
                         SpellTools.SpellList.BardSpellList.ToReference<BlueprintSpellListReference>()
                     };
-                    c.m_Spellbook = SpellTools.Spellbook.ClericSpellbook.ToReference<BlueprintSpellbookReference>();
+                    c.m_Spellbook = ArchivistSpellbook.ToReference<BlueprintSpellbookReference>();
                 });
-                bp.AddComponent<AddAbilityResources>(c => {
+                bp.AddComponent<SecretsofMagicalDisciplineArcanistComponent>(c =>
+                {
+                    c.m_Resource = LoremasterSecretsofMagicalDisciplineResource.ToReference<BlueprintAbilityResourceReference>();
+                    c.m_SpellLists = new BlueprintSpellListReference[] {
+                        SpellTools.SpellList.WizardSpellList.ToReference<BlueprintSpellListReference>(),
+                        SpellTools.SpellList.ClericSpellList.ToReference<BlueprintSpellListReference>(),
+                        SpellTools.SpellList.DruidSpellList.ToReference<BlueprintSpellListReference>(),
+                        SpellTools.SpellList.WitchSpellList.ToReference<BlueprintSpellListReference>(),
+                        SpellTools.SpellList.BardSpellList.ToReference<BlueprintSpellListReference>()
+                    };
+                    c.m_Spellbook = SpellTools.Spellbook.ArcanistSpellbook.ToReference<BlueprintSpellbookReference>();
+                });
+                bp.AddComponent<AddAbilityResources>(c =>
+                {
                     c.m_Resource = LoremasterSecretsofMagicalDisciplineResource.ToReference<BlueprintAbilityResourceReference>();
                     c.RestoreAmount = true;
                 });
             });
 
-            var LoremasterSecretsofMagicalDisciplineExtraUse = FeatTools.CreateExtraResourceFeat(SOMDContext, "LoremasterSecretsofMagicalDisciplineExtraUse", LoremasterSecretsofMagicalDisciplineResource, 1, bp => {
+            var LoremasterSecretsofMagicalDisciplineExtraUse = FeatTools.CreateExtraResourceFeat(SOMDContext, "LoremasterSecretsofMagicalDisciplineExtraUse", LoremasterSecretsofMagicalDisciplineResource, 1, bp =>
+            {
                 bp.SetName(SOMDContext, "Loremaster Secrets of Magical Discipline Extra Use");
                 bp.SetDescription(SOMDContext, "You gain 1 more uses of the Secrets of Magical Discipline ability " +
                     "increases by that amount.\nYou can take this feat multiple times. Its effects stack.");
                 bp.AddPrerequisiteFeature(LoremasterSecretsofMagicalDiscipline, GroupType.Any);
                 bp.Ranks = 1000;
-                bp.AddComponent<IncreaseResourceAmount>(c => {
+                bp.AddComponent<IncreaseResourceAmount>(c =>
+                {
                     c.m_Resource = LoremasterSecretsofMagicalDisciplineResource.ToReference<BlueprintAbilityResourceReference>();
                     c.Value = 1;
                 });
@@ -166,20 +327,23 @@ namespace SOMD
 
 
 
-            var UniversalistSchoolBonuses = FeatTools.CreateExtraResourceFeat(SOMDContext, "UniversalistSchoolBonuses", ItemBondResource, 5, bp => {
+            var UniversalistSchoolBonuses = FeatTools.CreateExtraResourceFeat(SOMDContext, "UniversalistSchoolBonuses", ItemBondResource, 10, bp =>
+            {
                 bp.SetName(SOMDContext, "Spell Master Abilities Extra Use");
                 bp.SetDescription(SOMDContext, "You gain 5 more uses of the Spell Master Archetype abilities " +
                     "increases by that amount.\nYou can take this feat multiple times. Its effects stack.");
                 bp.AddPrerequisiteFeature(itembondfeature, GroupType.Any);
                 bp.Ranks = 1000;
 
-                bp.AddComponent<IncreaseResourceAmount>(c => {
+                bp.AddComponent<IncreaseResourceAmount>(c =>
+                {
                     c.m_Resource = FocusedSpellResource;
-                    c.Value = 5;
+                    c.Value = 10;
                 });
-                bp.AddComponent<IncreaseResourceAmount>(c => {
+                bp.AddComponent<IncreaseResourceAmount>(c =>
+                {
                     c.m_Resource = UniversalistSchoolGreaterResource;
-                    c.Value = 5;
+                    c.Value = 10;
                 });
             });
 
@@ -187,29 +351,17 @@ namespace SOMD
 
 
             FeatTools.AddAsFeat(LoremasterSecretsofMagicalDiscipline);
-            FeatTools.AddAsFeat(LoremasterSecretsofMagicalDisciplineExtraUse);
+            
             FeatTools.AddAsFeat(UniversalistSchoolBonuses);
             FeatTools.AddAsMythicAbility(UniversalistSchoolBonuses);
             FeatTools.AddAsMythicFeat(UniversalistSchoolBonuses);
+
+            FeatTools.AddAsFeat(LoremasterSecretsofMagicalDisciplineExtraUse);
             FeatTools.AddAsMythicAbility(LoremasterSecretsofMagicalDisciplineExtraUse);
             FeatTools.AddAsMythicFeat(LoremasterSecretsofMagicalDisciplineExtraUse);
 
 
 
-            var ArcaneMetamastery = BlueprintTools.GetModBlueprintReference<BlueprintFeatureReference>(SOMDContext, "ArcaneMetamastery");
-            var ArcaneMetamasteryResource = BlueprintTools.GetModBlueprintReference<BlueprintAbilityResourceReference>(SOMDContext, "ArcaneMetamasteryResource");
-
-            var ArcaneMetmasteryUse = FeatTools.CreateExtraResourceFeat(SOMDContext, "ArcaneMetmasteryUse", ArcaneMetamasteryResource, 5, bp => {
-                bp.SetName(SOMDContext, "Arcane Metamastery Extra Uses");
-                bp.SetDescription(SOMDContext, "You gain 5 more uses of the Arcane Metamastery ability " +
-                    "increases by that amount.\nYou can take this feat multiple times. Its effects stack.");
-                bp.AddPrerequisiteFeature(ArcaneMetamastery, GroupType.Any);
-                bp.Ranks = 1000;
-            });
-
-
-            FeatTools.AddAsFeat(ArcaneMetmasteryUse);
-            FeatTools.AddAsMythicAbility(ArcaneMetmasteryUse);
 
 
             var SpellMasterArchetype = BlueprintTools.GetBlueprint<BlueprintArchetype>("bb571f1b6cea462e99db7893685a0982");
@@ -255,7 +407,8 @@ namespace SOMD
             mythicselection.Group2 = FeatureGroup.TricksterFeat;
 
 
-            var SpellsCheatsProgression = Helpers.CreateBlueprint<BlueprintProgression>(SOMDContext, "SpellCheatsProgression", bp => {
+            var SpellsCheatsProgression = Helpers.CreateBlueprint<BlueprintProgression>(SOMDContext, "SpellCheatsProgression", bp =>
+            {
                 bp.SetName(SOMDContext, "Mythic Soul Powers");
                 bp.SetDescription(SOMDContext, "The powers of the soul allow an anticipation of a future mysthic status");
                 bp.Groups = SpecialisationSchoolUniversalistProgression.Groups;
@@ -292,135 +445,39 @@ namespace SOMD
 
             var EcclesitheurgeArchetype = BlueprintTools.GetBlueprint<BlueprintArchetype>("472af8cb3de628f4a805dc4a038971bc");
 
+            var ArcaneMetamastery = BlueprintTools.GetBlueprint<BlueprintFeature>("f6eea2ae-4d0c-486c-b01d-0c34bb9e17ae");
+            var ArcaneMetamasteryResource = BlueprintTools.GetBlueprint<BlueprintAbilityResource>("917e7ea0-f774-4ba1-a00e-3f736c0754f2");
 
-            var clericspells = SpellTools.SpellList.ClericSpellList;
-
-            var ArchivistSpellList = SpellListConfigurator.New("ArchivistSpellList", "0795f6da-24aa-49c5-b847-e86a8615aec8")
-                .AddToSpellsByLevel(ClericSpells.SpellsByLevel)
-            .Configure();
-
-            var list = new List<BlueprintSpellList>() {
-                SpellListRefs.DruidSpellList.Reference.Get(),
-                SpellListRefs.InquisitorSpellList.Reference.Get(),
-                SpellListRefs.PaladinSpellList.Reference.Get(),
-                SpellListRefs.RangerSpellList.Reference.Get(),
-                SpellListRefs.ShamanSpelllist.Reference.Get(),
-                SpellListRefs.WarpriestSpelllist.Reference.Get()
-            };
-            var domainlist = FeatureSelectionRefs.DomainsSelection.Reference.Get().m_AllFeatures;
-            foreach (var feature in domainlist)
+            var ArcaneMetmasteryUse = FeatTools.CreateExtraResourceFeat(SOMDContext, "ArcaneMetmasteryUse", ArcaneMetamasteryResource, 5, bp =>
             {
-                var spelllist = feature.Get().GetComponent<LearnSpellList>().m_SpellList;
-                list.Add(spelllist);
-            }
-            foreach (var level in ArchivistSpellList.SpellsByLevel)
-            {
-                foreach (var clazz in list)
-                {
-                    foreach (var spell in clazz.SpellsByLevel[level.SpellLevel].Spells)
-                    {
-                        level.m_Spells.Add(spell.ToReference<BlueprintAbilityReference>());
-                    }
-                }
-            }
-
-
-
-            var ArchivistSpellbook = ClassTools.Classes.ClericClass.Spellbook.CreateCopy(SOMDContext, "ArchivistSpellbook", bp => {
-                bp.CastingAttribute = StatType.Intelligence;
-                bp.m_SpellList = ArchivistSpellList.ToReference<BlueprintSpellListReference>();
-                bp.m_SpellsKnown = ClassTools.Classes.WizardClass.Spellbook.m_SpellsKnown;
-                bp.AllSpellsKnown = ClassTools.Classes.WizardClass.Spellbook.AllSpellsKnown;
-                bp.SpellsPerLevel = ClassTools.Classes.WizardClass.Spellbook.SpellsPerLevel;
-                bp.m_SpellsPerDay = ClassTools.Classes.WizardClass.Spellbook.m_SpellsPerDay;
-                bp.CanCopyScrolls = ClassTools.Classes.WizardClass.Spellbook.CanCopyScrolls;
-                SpellTools.Spellbook.AllSpellbooks.Add(bp);
-
+                bp.SetName(SOMDContext, "Arcane Metamastery Extra Uses");
+                bp.SetDescription(SOMDContext, "You gain 5 more uses of the Arcane Metamastery ability " +
+                    "increases by that amount.\nYou can take this feat multiple times. Its effects stack.");
+                bp.AddPrerequisiteFeature(ArcaneMetamastery, GroupType.Any);
+                bp.Ranks = 1000;
             });
 
 
+            FeatTools.AddAsFeat(ArcaneMetmasteryUse);
+            FeatTools.AddAsMythicAbility(ArcaneMetmasteryUse);
+            FeatTools.AddAsMythicFeat(ArcaneMetmasteryUse);
 
-
-            var ArchivistArchetype = Helpers.CreateBlueprint<BlueprintArchetype>(SOMDContext, "ArchivistArchetype", bp => {
-                bp.SetName(SOMDContext, "Archivist");
-                bp.SetDescription(SOMDContext, "While most clerics who fall out of favor with their deities " +
-                    "simply lose their divine connection and the powers it granted, a few continue to go through the motions of prayer and obedience, persisting " +
-                    "in the habits of faith even when their faith itself has faded. Among these, an even smaller number find that while their original deity no " +
-                    "longer answers their prayers, something else does: an unknown entity or force of the universe channeling its power through a trained and " +
-                    "practicing vessel.");
-                bp.m_ReplaceSpellbook = ArchivistSpellbook.ToReference<BlueprintSpellbookReference>();
-                bp.RemoveFeatures = new LevelEntry[] {
-                    Helpers.CreateLevelEntry(1,
-                        ChannelEnergySelection,
-                        DomainsSelection,
-                        SecondDomainsSelection
-                    ),
-                };
-                bp.AddFeatures = new LevelEntry[] {
-                    Helpers.CreateLevelEntry(1,
-                        ClericProficiencies
-                    ),
-                };
-            });
-            ClassTools.Classes.ClericClass.m_Archetypes = ClassTools.Classes.ClericClass.m_Archetypes.AppendToArray(ArchivistArchetype.ToReference<BlueprintArchetypeReference>());
-
-
-            ClassTools.Classes.WizardClass.TemporaryContext(bp => {
-            });
-
-            var MysticTheurgeArchivistLevelUp = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "MysticTheurgeArchivistLevelUp", bp => {
-                bp.SetName(SOMDContext, "Archivist");
-                bp.SetDescription(SOMDContext, "At 1st level, the mystic theurge selects a divine {g|Encyclopedia:Spell}spellcasting{/g} class she belonged to before adding the prestige class. " +
-                    "When a new mystic theurge level is gained, the character gains new spells per day and new spells known as if she had also gained a level in that spellcasting class.");
-                bp.Ranks = 10;
-                bp.HideInUI = true;
-                bp.Groups = new FeatureGroup[] { FeatureGroup.MysticTheurgeDivineSpellbook };
-                bp.IsClassFeature = true;
-                bp.AddComponent<AddSpellbookLevel>(c => {
-                    c.m_Spellbook = ArchivistSpellbook.ToReference<BlueprintSpellbookReference>();
-                });
-            });
-            var MysticTheurgeArchivistProgression = Helpers.CreateBlueprint<BlueprintProgression>(SOMDContext, "MysticTheurgeArchivistProgression", bp => {
-                bp.SetName(SOMDContext, "Archivist");
-                bp.SetDescription(SOMDContext, "At 1st level, the mystic theurge selects a divine {g|Encyclopedia:Spell}spellcasting{/g} class she belonged to before adding the prestige class. " +
-                    "When a new mystic theurge level is gained, the character gains new spells per day and new spells known as if she had also gained a level in that spellcasting class.");
-                bp.Ranks = 1;
-                bp.HideInUI = true;
-                bp.HideInCharacterSheetAndLevelUp = true;
-                bp.HideNotAvailibleInUI = true;
-                bp.Groups = new FeatureGroup[] { FeatureGroup.MysticTheurgeDivineSpellbook };
-                bp.IsClassFeature = true;
-                bp.m_Classes = new BlueprintProgression.ClassWithLevel[] {
-                    new BlueprintProgression.ClassWithLevel{
-                        m_Class = MysticTheurgeClass.ToReference<BlueprintCharacterClassReference>()
-                    }
-                };
-                bp.LevelEntries = new LevelEntry[] {
-                    Helpers.CreateLevelEntry(1, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(2, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(3, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(4, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(5, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(6, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(7, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(8, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(9, MysticTheurgeArchivistLevelUp),
-                    Helpers.CreateLevelEntry(10, MysticTheurgeArchivistLevelUp)
-                };
-                bp.AddPrerequisite<PrerequisiteClassSpellLevel>(c => {
-                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
-                    c.RequiredSpellLevel = 2;
-                });
-                bp.AddComponent<MysticTheurgeSpellbook>(c => {
-                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
-                    c.m_MysticTheurge = MysticTheurgeClass.ToReference<BlueprintCharacterClassReference>();
-                });
-                bp.AddPrerequisite<PrerequisiteArchetypeLevel>(c => {
-                    c.m_CharacterClass = ClassTools.Classes.ClericClass.ToReference<BlueprintCharacterClassReference>();
-                    c.m_Archetype = ArchivistArchetype.ToReference<BlueprintArchetypeReference>();
-                    c.Level = 1;
-                });
-            });
+            var extrareservoir = BlueprintTools.GetBlueprint<BlueprintFeature>("635cb4aa-1d92-4fe0-b580-449e6cb0396c");
+            extrareservoir.Ranks = 1000;
+            FeatTools.AddAsMythicAbility(extrareservoir);
+            FeatTools.AddAsMythicFeat(extrareservoir);
+            var ExtraArcanePool = BlueprintTools.GetBlueprint<BlueprintFeature>("42f96fc8d6c80784194262e51b0a1d25");
+            ExtraArcanePool.Ranks = 1000;
+            FeatTools.AddAsMythicAbility(ExtraArcanePool);
+            FeatTools.AddAsMythicFeat(ExtraArcanePool);
+            var ExtraLayOnHands = BlueprintTools.GetBlueprint<BlueprintFeature>("a2b2f20dfb4d3ed40b9198e22be82030");
+            ExtraLayOnHands.Ranks = 1000;
+            FeatTools.AddAsMythicAbility(ExtraLayOnHands);
+            FeatTools.AddAsMythicFeat(ExtraLayOnHands);
+            var ExtraPerformance = BlueprintTools.GetBlueprint<BlueprintFeature>("0d3651b2cb0d89448b112e23214e744e");
+            ExtraPerformance.Ranks = 1000;
+            FeatTools.AddAsMythicAbility(ExtraPerformance);
+            FeatTools.AddAsMythicFeat(ExtraPerformance);
         }
     }
 }

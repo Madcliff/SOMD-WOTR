@@ -7,7 +7,7 @@ using SOMD.NewUnitParts;
 namespace SOMD.NewComponents
 {
     [TypeId("44440427d6194decb20524bc0d284a1c")]
-    public class SecretsofMagicalDisciplineComponent : UnitFactComponentDelegate
+    public class SecretsofMagicalDisciplineArcanistComponent : UnitFactComponentDelegate
     {
         public override void OnTurnOn()
         {

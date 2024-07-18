@@ -10,6 +10,9 @@ namespace SOMD.ModLogic
 
         public ModContextSOMD(ModEntry ModEntry) : base(ModEntry)
         {
+        #if DEBUG
+            Debug = true;
+        #endif
             LoadAllSettings();
         }
         public override void LoadAllSettings()
@@ -22,6 +25,8 @@ namespace SOMD.ModLogic
             base.AfterBlueprintCachePatches();
             if (Debug)
             {
+                Blueprints.RemoveUnused();
+                SaveSettings(BlueprintsFile, Blueprints);
                 ModLocalizationPack.RemoveUnused();
                 SaveLocalization(ModLocalizationPack);
             }
