@@ -1,11 +1,11 @@
 ﻿{
     "Id": "SOMD",
     "DisplayName": "Secrets of Magical Discipline",
-    "Author": "",
+    "Author": "Zoros",
     "Version": "1.0.0",
     "ManagerVersion": "0.27.11",
     "Requirements": [ "TabletopTweaks-Core-0.7.6" ],
-    "LoadAfter": [ "TabletopTweaks-Core", "TabletopTweaks-Base" ],
+    "LoadAfter": [ "TabletopTweaks-Core", "TabletopTweaks-Base", "PrestigePlus" ],
     "AssemblyName": "SOMD.dll",
     "EntryMethod": "SOMD.Main.Load",
     "HomePage": "",

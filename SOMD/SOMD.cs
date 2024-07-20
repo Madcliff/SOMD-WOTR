@@ -101,6 +101,7 @@ namespace SOMD
                 SpellListRefs.ShamanSpelllist.Reference.Get(),
                 SpellListRefs.WarpriestSpelllist.Reference.Get()
             };
+
             var domainlist = FeatureSelectionRefs.DomainsSelection.Reference.Get().m_AllFeatures;
             foreach (var feature in domainlist)
             {
@@ -351,7 +352,7 @@ namespace SOMD
 
 
             FeatTools.AddAsFeat(LoremasterSecretsofMagicalDiscipline);
-            
+
             FeatTools.AddAsFeat(UniversalistSchoolBonuses);
             FeatTools.AddAsMythicAbility(UniversalistSchoolBonuses);
             FeatTools.AddAsMythicFeat(UniversalistSchoolBonuses);
@@ -466,18 +467,54 @@ namespace SOMD
             extrareservoir.Ranks = 1000;
             FeatTools.AddAsMythicAbility(extrareservoir);
             FeatTools.AddAsMythicFeat(extrareservoir);
+            
             var ExtraArcanePool = BlueprintTools.GetBlueprint<BlueprintFeature>("42f96fc8d6c80784194262e51b0a1d25");
             ExtraArcanePool.Ranks = 1000;
             FeatTools.AddAsMythicAbility(ExtraArcanePool);
             FeatTools.AddAsMythicFeat(ExtraArcanePool);
+            
             var ExtraLayOnHands = BlueprintTools.GetBlueprint<BlueprintFeature>("a2b2f20dfb4d3ed40b9198e22be82030");
             ExtraLayOnHands.Ranks = 1000;
             FeatTools.AddAsMythicAbility(ExtraLayOnHands);
             FeatTools.AddAsMythicFeat(ExtraLayOnHands);
+
             var ExtraPerformance = BlueprintTools.GetBlueprint<BlueprintFeature>("0d3651b2cb0d89448b112e23214e744e");
             ExtraPerformance.Ranks = 1000;
             FeatTools.AddAsMythicAbility(ExtraPerformance);
             FeatTools.AddAsMythicFeat(ExtraPerformance);
+
+
+            var LoremasterCasterLevel = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "LoremasterCasterLevel", bp =>
+            {
+                bp.SetName(SOMDContext, "Loremaster Bonus Caster Level");
+                bp.SetDescription(SOMDContext, "Add 1 to Bonus caster Level");
+                bp.IsClassFeature = true;
+                bp.Ranks = 100;
+                bp.AddComponent<AddStatBonus>(c =>
+                {
+                    c.Stat = StatType.BonusCasterLevel;
+                    c.Value = 1;
+                });
+            });
+            FeatTools.AddAsFeat(LoremasterCasterLevel);
+            FeatTools.AddAsMythicAbility(LoremasterCasterLevel);
+            FeatTools.AddAsMythicFeat(LoremasterCasterLevel);
+            var LoremasterSpellSlots = Helpers.CreateBlueprint<BlueprintFeature>(SOMDContext, "LoremasterSpellSlots", bp =>
+            {
+                bp.SetName(SOMDContext, "Loremaster Bonus Spell Slots");
+                bp.SetDescription(SOMDContext, "Add 5 Bonus Spell Slots");
+                bp.IsClassFeature = true;
+                bp.Ranks = 1;
+                bp.AddComponent<AddSpellsPerDay>(c =>
+                {
+                    c.Levels = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+                    c.Amount = 5;
+                });
+            });
+            FeatTools.AddAsFeat(LoremasterSpellSlots);
+            FeatTools.AddAsMythicAbility(LoremasterSpellSlots);
+            FeatTools.AddAsMythicFeat(LoremasterSpellSlots);
+
         }
     }
 }
